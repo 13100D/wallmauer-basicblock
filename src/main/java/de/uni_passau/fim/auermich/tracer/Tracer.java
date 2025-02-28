@@ -126,8 +126,8 @@ public class Tracer extends BroadcastReceiver {
      */
     public static void trace(String identifier) {
         synchronized (Tracer.class) {
-            // Get nanosecond precision timestamp
-            long timestamp = System.nanoTime();
+            // Get millis precision timestamp
+            long timestamp = System.currentTimeMillis();
             traces.add(identifier + "->" + timestamp);
 
             if (traces.size() == CACHE_SIZE) {
