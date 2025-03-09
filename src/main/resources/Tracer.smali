@@ -353,8 +353,8 @@
     monitor-enter v2
 
     :try_start_3
-    # Get system nanotime
-    invoke-static {}, Ljava/lang/System;->nanoTime()J
+    # Get nanoseconds since boot
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtimeNanos()J
     move-result-wide v0
 
     # Create new StringBuilder for concatenation
