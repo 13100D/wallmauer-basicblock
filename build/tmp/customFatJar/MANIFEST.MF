@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: de.uni_passau.fim.auermich.instrumentation.basicblockcoverag
+ e.BasicBlockCoverage
+

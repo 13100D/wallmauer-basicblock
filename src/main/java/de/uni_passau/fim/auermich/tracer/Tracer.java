@@ -130,6 +130,13 @@ public class Tracer extends BroadcastReceiver {
             long timestamp = SystemClock.elapsedRealtimeNanos();
             traces.add(identifier + "->" + timestamp);
             
+            try {
+                Thread.sleep(500); // or SystemClock.sleep(1) for Android
+            } catch (InterruptedException e) {
+                // We can ignore interruption as this is just a debug delay
+                Thread.currentThread().interrupt(); // Preserve interrupt status
+            }
+            
             if (traces.size() == CACHE_SIZE) {
                 writeTraces();
             }

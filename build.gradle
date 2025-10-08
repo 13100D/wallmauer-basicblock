@@ -6,6 +6,9 @@ plugins {
 repositories {
     mavenCentral()
     google()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://oss.sonatype.org/content/repositories/releases' }
     flatDir {
         dirs 'libs'
     }
@@ -18,17 +21,24 @@ dependencies {
     implementation 'commons-io:commons-io:2.11.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
     implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'com.android.tools.smali:smali:3.0.3'
-    implementation 'com.android.tools.smali:smali-dexlib2:3.0.3'
-    implementation 'com.android.tools.smali:smali-baksmali:3.0.3'
-    implementation 'org.apktool:apktool-lib:2.9.0'
+
+    // Android SDK
+    implementation files("${System.env.ANDROID_HOME}/platforms/android-33/android.jar")
+
+    // FIXED: Use original org.smali libraries (compatible with multidexlib2)
+    implementation 'org.smali:dexlib2:2.5.2'
+    implementation 'org.smali:baksmali:2.5.2'
+    implementation 'org.smali:smali:2.5.2'
     
-    // Use local multidexlib2 jar instead of remote dependency
-    implementation files('libs/multidexlib2.jar')
+    // FIXED: Add proper APKTool library dependency
+    implementation 'org.apktool:apktool-lib:2.10.0'
     
-    // Use local Android jars
-    compileOnly files('libs/android.jar')
-    implementation files('libs/androidx.jar')
+    // MultidexLib2 (now compatible with org.smali libraries)
+    implementation 'com.github.lanchon.dexpatcher:multidexlib2:2.3.4.r2'
+    
+    // Additional dependencies
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.android.tools.build:aapt2:7.0.0-beta04-7396180'
 }
 
 application {
@@ -36,8 +46,8 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 task customFatJar(type: Jar) {
@@ -55,4 +65,4 @@ task customFatJar(type: Jar) {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     with jar
-} 
+}
