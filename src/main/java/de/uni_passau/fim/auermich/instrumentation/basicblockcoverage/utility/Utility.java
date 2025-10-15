@@ -16,6 +16,7 @@ import com.android.tools.smali.dexlib2.dexbacked.value.DexBackedTypeEncodedValue
 import com.android.tools.smali.dexlib2.iface.*;
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef;
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod;
+import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore;
 import com.android.tools.smali.smali.SmaliTestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteSource;
@@ -384,9 +385,9 @@ public final class Utility {
      * @param opCode The API opcode level, e.g. API 28 (Android).
      * @throws IOException Should never happen.
      */
+
     public static void writeMultiDexFile(File filePath, List<ClassDef> classes, int opCode) throws IOException {
 
-        // TODO: directly update merged dex file instance instead of creating new dex file instance here
         DexFile dexFile = new DexFile() {
             @Nonnull
             @Override
@@ -408,14 +409,86 @@ public final class Utility {
             @Nonnull
             @Override
             public Opcodes getOpcodes() {
-                // https://android.googlesource.com/platform/dalvik/+/master/dx/src/com/android/dex/DexFormat.java
                 return Opcodes.forApi(opCode);
             }
         };
 
-        MultiDexIO.writeDexFile(true, 0, filePath, new BasicDexFileNamer(),
-                dexFile, DexIO.DEFAULT_MAX_DEX_POOL_SIZE, null);
+        // Create the output map that will hold the dex data in memory
+        Map<String, MemoryDataStore> outputMap = new LinkedHashMap<>();
+
+        // Write to memory using MultiDexIO (it will split automatically if needed)
+        MultiDexIO.writeDexFile(
+                true,                           // multiDex = true (allow splitting)
+                outputMap,                      // output map to store dex data
+                new BasicDexFileNamer(),        // namer for classes.dex, classes2.dex, etc.
+                dexFile,                        // the DexFile to write
+                DexIO.DEFAULT_MAX_DEX_POOL_SIZE, // max pool size
+                null                            // logger (optional)
+        );
+
+        // Now write the memory stores to actual files on disk
+        File outputDir = filePath.isDirectory() ? filePath : filePath.getParentFile();
+        
+        for (Map.Entry<String, MemoryDataStore> entry : outputMap.entrySet()) {
+            String dexFileName = entry.getKey();
+            MemoryDataStore dataStore = entry.getValue();
+            
+            File outputFile = new File(outputDir, dexFileName);
+            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                // Get the buffer from MemoryDataStore and write it
+                byte[] buffer = dataStore.getBuffer();
+                int size = dataStore.getSize();
+                fos.write(buffer, 0, size);
+            }
+        }
     }
+    // public static void writeMultiDexFile(File filePath, List<ClassDef> classes, int opCode) throws IOException {
+
+    //     // TODO: directly update merged dex file instance instead of creating new dex file instance here
+    //     DexFile dexFile = new DexFile() {
+    //         @Nonnull
+    //         @Override
+    //         public Set<? extends ClassDef> getClasses() {
+    //             return new AbstractSet<ClassDef>() {
+    //                 @Nonnull
+    //                 @Override
+    //                 public Iterator<ClassDef> iterator() {
+    //                     return classes.iterator();
+    //                 }
+
+    //                 @Override
+    //                 public int size() {
+    //                     return classes.size();
+    //                 }
+    //             };
+    //         }
+
+    //         @Nonnull
+    //         @Override
+    //         public Opcodes getOpcodes() {
+    //             // https://android.googlesource.com/platform/dalvik/+/master/dx/src/com/android/dex/DexFormat.java
+    //             return Opcodes.forApi(opCode);
+    //         }
+    //     };
+
+    //     // Create a map to store the dex data
+    //     Map<String, MemoryDataStore> dexDataStoreMap = new HashMap<>();
+
+    //     // Write the dex file to the memory store
+    //     MemoryDataStore memoryStore = new MemoryDataStore();
+    //     DexIO.writeDexFile(memoryStore, dexFile);
+
+    //     // Put it in the map with a key (typically the dex file name)
+    //     dexDataStoreMap.put(filePath.getName(), memoryStore);
+
+    //     // Now write to disk using MultiDexIO
+    //     MultiDexIO.writeDexFile(true, 0, dexDataStoreMap, new BasicDexFileNamer(),
+    //             filePath, DexIO.DEFAULT_MAX_DEX_POOL_SIZE, null);
+
+
+    //     // MultiDexIO.writeDexFile(true, 0, filePath, new BasicDexFileNamer(),
+    //     //         dexFile, DexIO.DEFAULT_MAX_DEX_POOL_SIZE, null);
+    // }
 
     /**
      * Produces a .dex file containing the given list of classes.

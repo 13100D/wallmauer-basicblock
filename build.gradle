@@ -4,8 +4,10 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
     google()
+    mavenCentral()
+    // Add the JitPack repository
+    maven { url 'https://jitpack.io' }
     flatDir {
         dirs 'libs'
     }
@@ -22,13 +24,15 @@ dependencies {
     implementation 'com.android.tools.smali:smali-dexlib2:3.0.3'
     implementation 'com.android.tools.smali:smali-baksmali:3.0.3'
     implementation 'org.apktool:apktool-lib:2.9.0'
+
+    // Use remote multidexlib2 dependency from JitPack
+    implementation 'io.github.canny1913:multidexlib2:3.0.2'
     
-    // Use local multidexlib2 jar instead of remote dependency
-    implementation files('libs/multidexlib2.jar')
+    // You can now remove the local file implementation
+    // implementation files('libs/multidexlib2-3.0.2.jar')
     
     // Use local Android jars
-    compileOnly files('libs/android.jar')
-    implementation files('libs/androidx.jar')
+    compileOnly files("${System.getenv('ANDROID_HOME')}/platforms/android-33/android.jar")
 }
 
 application {
@@ -55,4 +59,4 @@ task customFatJar(type: Jar) {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     with jar
-} 
+}
